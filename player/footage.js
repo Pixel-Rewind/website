@@ -19,7 +19,7 @@ const LIMIT = 3 * 60 * 60 * FPS;   // never more than 3 hours, whatever the repl
 const WARMUP = 2 * 60 * FPS;       // the engine's own way to its replay session: never more than 2 minutes
 const YIELD_MS = 50;              // the page gets the main thread back this often (progress, Cancel)
 const SCREENS = 6;                 // frames on their way to the video thread at most
-const R_TIME = 0, R_LENGTH = 1, R_PLAY = 2, R_SEEK = 3, R_MODE = 4, R_BUSY = 5, R_VOICE = 6;   // pr_replay (web/player.c)
+const R_TIME = 0, R_LENGTH = 1, R_PLAY = 2, R_SEEK = 3, R_MODE = 4, R_BUSY = 5, R_VOICE = 6, R_RESULTS = 7;   // pr_replay (web/player.c)
 // The video frames' colours (web/footage-worker.js), for the encoder to write into the file
 const BT709 = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
 
@@ -197,7 +197,9 @@ export async function renderFootage(M, support, { signal, progress, skip = true,
 
       // Over as the 2008 player screen saw it: its time is up and the board is still (web/player.html)
       const t = M._pr_replay(R_TIME, 0, 0), len = M._pr_replay(R_LENGTH, 0, 0);
-      if (end === Infinity && len > 0 && t >= len && !M._pr_replay(R_BUSY, 0, 0)) end = frames + HOLD;
+      const results = M._pr_replay(R_RESULTS, 0, 0);   // the match ended: the loser and winner animations run
+      if (end === Infinity && results > FPS * 7.25) end = frames + HOLD;
+      else if (end === Infinity && !results && len > 0 && t >= len && !M._pr_replay(R_BUSY, 0, 0)) end = frames + HOLD;
       if (frames >= LIMIT) throw new Error('The replay did not end within 3 hours.');
 
       // The sound encoder works beside the engine too; when it falls behind, the engine waits for it
